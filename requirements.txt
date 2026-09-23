@@ -38,6 +38,7 @@ pyzbar==0.1.9
 qrcode==8.2
 repath==0.9.0
 requests==2.34.2
+pytesseract
 rich==15.0.0
 six==1.17.0
 starlette==1.6.0
