@@ -33,6 +33,7 @@ pydantic_core==2.46.5
 Pygments==2.21.0
 python-dateutil==2.9.0.post0
 python-slugify==9.0.0
+python-multipart
 PyYAML==6.0.3
 pyzbar==0.1.9
 qrcode==8.2
