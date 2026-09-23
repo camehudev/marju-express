@@ -4,6 +4,11 @@ FROM python:3.12
 # Define o diretório de trabalho dentro do container
 WORKDIR /app
 
+# Exemplo para Debian/Ubuntu no Dockerfile
+RUN apt-get update && apt-get install -y \
+    libzbar0 \
+    tesseract-ocr
+
 # Copia os arquivos de dependência e instala
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
