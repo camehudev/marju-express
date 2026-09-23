@@ -23,10 +23,4 @@ from app.routers.stock_router import stock_router
 app.include_router(auth_router)
 app.include_router(stock_router)
 
-
-
-
-
-
-
 # uvicorn main:app --reload
