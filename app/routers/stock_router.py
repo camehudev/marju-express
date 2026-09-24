@@ -17,6 +17,7 @@ async def listar_estoque():
 @stock_router.post("/scan-image")
 async def scan_image(file: UploadFile = File(...)):
     try:
+        print(f"Recebendo arquivo: {file.filename}, tipo: {file.content_type}")
         contents = await file.read()
         nparr = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)

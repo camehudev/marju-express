@@ -4,10 +4,13 @@ FROM python:3.12
 # Define o diretório de trabalho dentro do container
 WORKDIR /app
 
-# Exemplo para Debian/Ubuntu no Dockerfile
+
+# Instala o Tesseract-OCR e o pacote de idioma português
 RUN apt-get update && apt-get install -y \
-    libzbar0 \
-    tesseract-ocr
+    tesseract-ocr \
+    tesseract-ocr-por \
+    libgl1-mesa-glx \
+    libglib2.0-0
 
 # Copia os arquivos de dependência e instala
 COPY requirements.txt .
