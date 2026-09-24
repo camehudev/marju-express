@@ -13,6 +13,7 @@ flet==1.0.0
 flet-cli==1.0.0
 flet-desktop==1.0.0
 flet-platform-assets==1.0.0
+flet-permission-handler==1.0.0
 flet-webview==1.0.0
 h11==0.16.0
 httpcore==1.0.9
