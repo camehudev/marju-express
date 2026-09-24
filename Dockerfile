@@ -5,10 +5,11 @@ FROM python:3.12
 WORKDIR /app
 
 
-# Instala o Tesseract-OCR e o pacote de idioma português
+# Instala o Tesseract, Zbar (para códigos de barras) e dependências gráficas
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     tesseract-ocr-por \
+    libzbar0 \
     libgl1 \
     libglib2.0-0
 
