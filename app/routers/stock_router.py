@@ -1,8 +1,7 @@
-import cv2
+import httpx
 import numpy as np
-import pytesseract
+import cv2
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from pyzbar.pyzbar import decode
 
 stock_router = APIRouter(
     prefix="/stock",
@@ -10,65 +9,36 @@ stock_router = APIRouter(
     responses={404: {"description": "Not found"}}
 )
 
-@stock_router.get("/")
-async def listar_estoque():
-    return {"status": 200, "mensagem": "Bem-vindo ao Marju Express API! 🚀"}
+# URL do Webhook do seu n8n
+N8N_WEBHOOK_URL = "https://pessoal-n8n-start.sjj3wv.easypanel.host/webhook/84ed9913-5511-42a1-b4df-79997f7a4def"
 
 @stock_router.post("/scan-image")
 async def scan_image(file: UploadFile = File(...)):
     try:
-        print(f"Recebendo arquivo: {file.filename}, tipo: {file.content_type}")
+        # Lê os bytes da imagem enviada pelo app mobile
         contents = await file.read()
+        
+        # (Opcional) Validação rápida com OpenCV para garantir que é uma imagem válida
         nparr = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
         if img is None:
-            raise HTTPException(status_code=400, detail="Não foi possível processar a imagem enviada.")
-        
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        
-        # 1. Leitura do Código de Barras (ID)
-        decoded_objects = decode(gray)
-        id_etiqueta = "N/A"
-        if decoded_objects:
-            id_etiqueta = decoded_objects[0].data.decode("utf-8")
-        else:
-            return {"success": False, "message": "Nenhum código de barras encontrado na etiqueta."}
-        
-        # 2. Tratamento para OCR
-        blur = cv2.bilateralFilter(gray, 9, 75, 75)
-        _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
-        # Extrai o texto linha por linha para facilitar a filtragem
-        texto_extraido = pytesseract.image_to_string(thresh, lang='por', config='--oem 3 --psm 6')
-        linhas = [linha.strip() for linha in texto_extraido.split('\n') if linha.strip()]
-        
-        # 3. Filtragem Inteligente (Focando em Destinatário e Remetente)
-        destinatario_encontrado = "Não identificado"
-        remetente_encontrado = "Não identificado"
-        
-        # Varre as linhas procurando palavras-chave características de etiquetas
-        for i, linha in enumerate(linhas):
-            linha_upper = linha.upper()
+            raise HTTPException(status_code=400, detail="Arquivo de imagem inválido.")
+
+        # Repassa a imagem para o n8n via HTTP POST de forma assíncrona
+        async with httpx.AsyncClient() as client:
+            files = {"file": (file.filename, contents, file.content_type)}
+            response = await client.post(N8N_WEBHOOK_URL, files=files, timeout=30.0)
             
-            # Tenta capturar o remetente com base em termos comuns
-            if "REMETENTE" in linha_upper or "FORNECEDOR" in linha_upper or "ULTRA" in linha_upper or "INTENSE" in linha_upper:
-                if i + 1 < len(linhas):
-                    remetente_encontrado = linhas[i+1]
+            if response.status_code != 200:
+                raise HTTPException(status_code=502, detail="Erro ao comunicar com o fluxo do n8n.")
             
-            # Tenta capturar o destinatário (geralmente vem após o nome ou em maiúsculas destacadas)
-            if "DESTINATARIO" in linha_upper or "RECEBEDOR" in linha_upper:
-                if i + 1 < len(linhas):
-                    destinatario_encontrado = linhas[i+1]
+            # Pega a resposta que o n8n processou (ex: com o Gemini) e devolve para o app
+            dados_n8n = response.json()
 
         return {
             "success": True,
-            "id": id_etiqueta,
-            "dados_extraidos": {
-                "destinatario": destinatario_encontrado,
-                "remetente": remetente_encontrado
-            },
-            "linhas_brutas_encontradas": linhas # Mantido para você ajustar os filtros se necessário
+            "message": "Processado com sucesso via FastAPI + n8n",
+            "resultado": dados_n8n
         }
 
     except Exception as e:
